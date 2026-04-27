@@ -1,7 +1,7 @@
 "use strict";
 
 const { useState, useEffect, useRef, useCallback } = React;
-const API = "http://localhost:8000";
+const API = "";
 
 // ─── Utilities ────────────────────────────────────────────────────
 
