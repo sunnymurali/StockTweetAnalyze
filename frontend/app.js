@@ -227,8 +227,8 @@ function TweetCard({ tweet, isActive, onSelect }) {
         <div className="ts-avatar" style={{ background: bg }}>{ini}</div>
         <div className="ts-tweet-meta">
           <div className="ts-tweet-name-row">
-            <span className="ts-tweet-name">{handle || "Unknown"}</span>
-            <span className="ts-tweet-handle">@{handle || "?"}</span>
+            <span className="ts-tweet-name">TradingDesk</span>
+            <span className="ts-tweet-handle">Feed</span>
           </div>
           <div className="ts-tweet-time-row">
             <span className="ts-tweet-time">{fmtDate(tweet.date)}</span>
