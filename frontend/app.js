@@ -124,8 +124,8 @@ function TopBar({ count }) {
           <span style={{ width:7,height:7,borderRadius:"50%",background:"var(--ts-up)",display:"inline-block" }} />
           LIVE
         </span>
-        <span className="ts-mono" style={{ fontSize:11, color:"var(--ts-muted)" }}>{time}</span>
-        <span className="ts-mono" style={{ fontSize:10,color:"var(--ts-dim)",background:"var(--ts-surface)",padding:"2px 7px",borderRadius:3 }}>
+        <span className="ts-mono" style={{ fontSize:11, color:"rgba(255,255,255,0.75)" }}>{time}</span>
+        <span className="ts-mono" style={{ fontSize:10,color:"rgba(255,255,255,0.90)",background:"rgba(255,255,255,0.15)",padding:"2px 10px",borderRadius:20 }}>
           {count} tweets
         </span>
       </div>
@@ -368,18 +368,18 @@ function LWCChart({ symbol, timespan }) {
         const chart = LightweightCharts.createChart(el, {
           width:  el.clientWidth  || 600,
           height: el.clientHeight || 320,
-          layout: { background: { color: "#ffffff" }, textColor: "#3b4a6b" },
-          grid:   { vertLines: { color: "#e8ebf4" }, horzLines: { color: "#e8ebf4" } },
+          layout: { background: { color: "#fafbff" }, textColor: "#1e1b4b" },
+          grid:   { vertLines: { color: "rgba(99,102,241,0.07)" }, horzLines: { color: "rgba(99,102,241,0.07)" } },
           crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-          rightPriceScale: { borderColor:"#d2d6e4", scaleMargins:{ top:0.05, bottom:0.22 } },
-          timeScale: { borderColor:"#d2d6e4", timeVisible:true, secondsVisible:false, fixLeftEdge:true, fixRightEdge:true },
+          rightPriceScale: { borderColor:"rgba(99,102,241,0.15)", scaleMargins:{ top:0.05, bottom:0.22 } },
+          timeScale: { borderColor:"rgba(99,102,241,0.15)", timeVisible:true, secondsVisible:false, fixLeftEdge:true, fixRightEdge:true },
         });
         chartRef.current = chart;
 
         const candles = chart.addCandlestickSeries({
-          upColor:"#22c55e", downColor:"#ef4444",
-          borderUpColor:"#22c55e", borderDownColor:"#ef4444",
-          wickUpColor:"#22c55e",   wickDownColor:"#ef4444",
+          upColor:"#16a34a", downColor:"#dc2626",
+          borderUpColor:"#16a34a", borderDownColor:"#dc2626",
+          wickUpColor:"#16a34a",   wickDownColor:"#dc2626",
         });
         const volSeries = chart.addHistogramSeries({
           priceFormat:{ type:"volume" }, priceScaleId:"vol",
@@ -392,7 +392,7 @@ function LWCChart({ symbol, timespan }) {
 
         candles.setData(data.bars);
         volSeries.setData(data.bars.map(b => ({ time:b.time, value:b.volume||0,
-          color: b.close >= b.open ? "#22c55e55" : "#ef444455" })));
+          color: b.close >= b.open ? "#16a34a55" : "#dc262655" })));
         chart.timeScale().fitContent();
         setStatus("ok");
 
@@ -402,7 +402,7 @@ function LWCChart({ symbol, timespan }) {
           const bar = param.seriesData.get(candles);
           if (!bar) return;
           const vol = barByTime[param.time]?.volume;
-          const dir = bar.close >= bar.open ? "#22c55e" : "#ef4444";
+          const dir = bar.close >= bar.open ? "#16a34a" : "#dc2626";
           legendRef.current.innerHTML =
             `<span>O <strong style="color:${dir}">${bar.open.toFixed(2)}</strong></span>` +
             `<span>H <strong style="color:${dir}">${bar.high.toFixed(2)}</strong></span>` +
