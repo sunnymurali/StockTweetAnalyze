@@ -226,6 +226,27 @@ body {
 .ts-stat-label { font-family: var(--ts-mono); font-size: 9px; letter-spacing: 0.08em; color: var(--ts-muted); text-transform: uppercase; }
 .ts-stat-value { font-family: var(--ts-mono); font-size: 12px; font-weight: 600; color: var(--ts-fg); }
 
+.ts-earnings-box {
+  display: flex; flex-direction: column; gap: 2px; align-items: center;
+  padding: 5px 10px; border-radius: 10px;
+  background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.20);
+}
+.ts-earnings-box.soon {
+  background: rgba(245,158,11,0.10); border-color: rgba(245,158,11,0.40);
+}
+.ts-earnings-label {
+  font-family: var(--ts-mono); font-size: 8px; font-weight: 700;
+  letter-spacing: 0.10em; color: var(--ts-muted); text-transform: uppercase;
+}
+.ts-earnings-date {
+  font-family: var(--ts-mono); font-size: 13px; font-weight: 700;
+  color: var(--ts-accent); line-height: 1;
+}
+.ts-earnings-box.soon .ts-earnings-date { color: #d97706; }
+.ts-earnings-est {
+  font-family: var(--ts-mono); font-size: 9px; color: var(--ts-muted); font-weight: 500;
+}
+
 .ts-chart-bar {
   display: flex; align-items: center; justify-content: space-between;
   padding: 8px 16px; border-bottom: 1px solid var(--ts-border);

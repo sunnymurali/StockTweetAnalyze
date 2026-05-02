@@ -18,7 +18,7 @@ from fastapi.staticfiles import StaticFiles
 
 from middleware import RequestLoggingMiddleware
 from mcp_client import MCPClient
-from routers import feed, quotes, news, action, charts, fundamentals, fundamentals_fh, earnings, analyst
+from routers import feed, quotes, news, action, charts, fundamentals, fundamentals_fh, earnings, analyst, earnings_date
 
 load_dotenv()
 
@@ -101,6 +101,7 @@ app.include_router(fundamentals.router)
 app.include_router(fundamentals_fh.router)
 app.include_router(earnings.router)
 app.include_router(analyst.router)
+app.include_router(earnings_date.router)
 
 # Serve frontend
 frontend_dir = Path(__file__).parent.parent / "frontend"

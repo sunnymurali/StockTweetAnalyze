@@ -254,7 +254,7 @@ function TweetCard({ tweet, isActive, onSelect }) {
 
 // ─── Detail Panel (center) ────────────────────────────────────────
 
-function DetailPanel({ symbol, quote, timespan, onTimespanChange, detailView, onDetailViewChange, fundamentals, fundLoading, news }) {
+function DetailPanel({ symbol, quote, timespan, onTimespanChange, detailView, onDetailViewChange, fundamentals, fundLoading, news, earningsInfo }) {
   if (!symbol) {
     return (
       <div className="ts-detail">
@@ -270,7 +270,7 @@ function DetailPanel({ symbol, quote, timespan, onTimespanChange, detailView, on
   }
   return (
     <div className="ts-detail">
-      <PriceHeader quote={quote} />
+      <PriceHeader quote={quote} earningsInfo={earningsInfo} />
       <div className="ts-chart-bar">
         {detailView === "chart" ? (
           <div className="ts-tf-buttons">
@@ -308,7 +308,24 @@ function DetailPanel({ symbol, quote, timespan, onTimespanChange, detailView, on
 
 // ─── Price Header ─────────────────────────────────────────────────
 
-function PriceHeader({ quote }) {
+function EarningsBox({ info }) {
+  if (!info?.earnings_date) return null;
+  const d     = new Date(info.earnings_date);
+  const label = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const days  = Math.round((d - Date.now()) / 86400000);
+  const soon  = days >= 0 && days <= 14;
+  return (
+    <div className={`ts-earnings-box${soon ? " soon" : ""}`}>
+      <span className="ts-earnings-label">EARNINGS</span>
+      <span className="ts-earnings-date">{label}</span>
+      {info.eps_avg != null && (
+        <span className="ts-earnings-est">EPS est. ${info.eps_avg.toFixed(2)}</span>
+      )}
+    </div>
+  );
+}
+
+function PriceHeader({ quote, earningsInfo }) {
   if (!quote) return (
     <div className="ts-price-header">
       <div style={{ color:"var(--ts-muted)", fontSize:12, fontFamily:"var(--ts-mono)" }}>Loading quote…</div>
@@ -351,6 +368,7 @@ function PriceHeader({ quote }) {
             <span className="ts-stat-value">{val}</span>
           </div>
         ))}
+        <EarningsBox info={earningsInfo} />
       </div>
     </div>
   );
@@ -1495,6 +1513,7 @@ function App() {
   const [activeSymbol, setActiveSymbol] = useState(null);
   const [quote,        setQuote]        = useState(null);
   const [news,         setNews]         = useState([]);
+  const [earningsInfo, setEarningsInfo] = useState(null);
   const [aiData,       setAiData]       = useState(null);
   const [aiLoading,    setAiLoading]    = useState(false);
   const [fundamentals, setFundamentals] = useState(null);
@@ -1544,6 +1563,7 @@ function App() {
     setActiveTweet(tweet);
     setQuote(null);
     setNews([]);
+    setEarningsInfo(null);
     setAiData(null);
     setFundamentals(null);
     if (!sym) { setActiveSymbol(null); return; }
@@ -1552,15 +1572,17 @@ function App() {
     setAiLoading(true);
     setFundLoading(true);
 
-    // Fire quote, news, and fundamentals in parallel
-    const [qRes, nRes, fRes] = await Promise.all([
+    // Fire quote, news, fundamentals, and earnings date in parallel
+    const [qRes, nRes, fRes, eRes] = await Promise.all([
       fetch(`${API}/api/quote/${sym}`).then(r => r.json()).catch(() => null),
       fetch(`${API}/api/news/${sym}`).then(r => r.json()).catch(() => ({ news: [] })),
       fetch(`${API}/api/fundamentals/${sym}`).then(r => r.json()).catch(() => null),
+      fetch(`${API}/api/earnings-date/${sym}`).then(r => r.json()).catch(() => null),
     ]);
     setQuote(qRes);
     setNews(nRes?.news || []);
     setFundamentals(fRes);
+    setEarningsInfo(eRes);
     setFundLoading(false);
 
     // AI call uses quote + news results
@@ -1609,7 +1631,7 @@ function App() {
           timespan={timespan} onTimespanChange={setTimespan}
           detailView={detailView} onDetailViewChange={setDetailView}
           fundamentals={fundamentals} fundLoading={fundLoading}
-          news={news} />
+          news={news} earningsInfo={earningsInfo} />
         <RightPanel aiData={aiData} aiLoading={aiLoading}
           activeSymbol={activeSymbol} />
       </div>
