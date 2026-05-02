@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter
+from finnhub_client import fetch_quote
 
 router = APIRouter()
 
 
 @router.get("/api/quote/{symbol}")
-async def get_quote(symbol: str, request: Request):
-    quotes = request.app.state.quotes
-    return await quotes.call("get_quote", {"symbol": symbol.upper()})
+async def get_quote(symbol: str):
+    return fetch_quote(symbol.upper())

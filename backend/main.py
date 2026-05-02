@@ -18,7 +18,7 @@ from fastapi.staticfiles import StaticFiles
 
 from middleware import RequestLoggingMiddleware
 from mcp_client import MCPClient
-from routers import feed, quotes, news, action, charts, fundamentals, earnings, analyst
+from routers import feed, quotes, news, action, charts, fundamentals, fundamentals_fh, earnings, analyst
 
 load_dotenv()
 
@@ -64,10 +64,8 @@ async def lifespan(app: FastAPI):
         MCP_DIR / "clippings_mcp.py",
         env={"CLIPPINGS_DIR": os.getenv("CLIPPINGS_DIR", r"C:\Users\Sunny\Downloads\InvestmentWiki\Clippings")}
     )
-    app.state.quotes = MCPClient(MCP_DIR / "quote_mcp.py")
-    app.state.news = MCPClient(MCP_DIR / "news_mcp.py")
 
-    clients = [app.state.clippings, app.state.quotes, app.state.news]
+    clients = [app.state.clippings]
     started = []
     try:
         for client in clients:
@@ -100,6 +98,7 @@ app.include_router(news.router)
 app.include_router(action.router)
 app.include_router(charts.router)
 app.include_router(fundamentals.router)
+app.include_router(fundamentals_fh.router)
 app.include_router(earnings.router)
 app.include_router(analyst.router)
 
