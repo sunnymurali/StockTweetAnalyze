@@ -127,31 +127,11 @@ def fetch_candles(symbol: str, timespan: str) -> list[dict]:
 
 # ── News ───────────────────────────────────────────────────────────────
 
-# Only show articles from authoritative editorial sources.
-# Checked against lowercased source string — partial match so variations like
-# "Reuters.com" or "Bloomberg News" still pass.
-_AUTHORITATIVE_SOURCES = {
-    "reuters", "bloomberg", "wsj", "wall street journal",
-    "barron", "financial times", "ft.com",
-    "cnbc", "marketwatch", "yahoo finance", "yahoo",
-    "the motley fool", "motley fool",
-    "seeking alpha", "investopedia",
-    "forbes", "fortune", "thestreet",
-    "associated press", " ap ", "dow jones",
-}
-
-
-def _is_authoritative(source: str) -> bool:
-    s = source.lower().strip()
-    return any(auth in s for auth in _AUTHORITATIVE_SOURCES)
-
-
 def fetch_news(symbol: str, days_back: int = 7, limit: int = 10) -> list[dict]:
     sym = symbol.upper()
     to_dt   = datetime.now(timezone.utc)
     from_dt = to_dt - timedelta(days=days_back)
 
-    # Fetch a wide window so the allowlist filter still fills the limit
     articles = fh_get("/company-news", {
         "symbol": sym,
         "from":   from_dt.strftime("%Y-%m-%d"),
@@ -161,31 +141,24 @@ def fetch_news(symbol: str, days_back: int = 7, limit: int = 10) -> list[dict]:
     if not isinstance(articles, list):
         return []
 
-    authoritative = []
+    result = []
     for a in articles:
-        if len(authoritative) >= limit:
+        if len(result) >= limit:
             break
-        source = a.get("source", "")
-        if not _is_authoritative(source):
-            continue
         ts = a.get("datetime")
         published = (
             datetime.fromtimestamp(ts, tz=timezone.utc).isoformat()
             if ts else None
         )
-        authoritative.append({
+        result.append({
             "title":     a.get("headline", ""),
-            "publisher": source,
+            "publisher": a.get("source", ""),
             "published": published,
             "link":      a.get("url", ""),
             "summary":   a.get("summary", ""),
         })
 
-    # If no authoritative sources found in this window, widen search to 30 days
-    if not authoritative and days_back < 30:
-        return fetch_news(symbol, days_back=30, limit=limit)
-
-    return authoritative
+    return result
 
 
 # ── Basic Financials (metrics) ─────────────────────────────────────────
