@@ -618,3 +618,80 @@ body {
 .ts-empty-icon { font-size: 48px; opacity: 0.5; filter: drop-shadow(0 4px 12px rgba(99,102,241,0.25)); }
 .ts-empty-title { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: var(--ts-accent); }
 .ts-empty-desc { font-size: 12px; color: var(--ts-muted); max-width: 260px; line-height: 1.55; }
+
+/* ── RESPONSIVE ────────────────────────────────────────── */
+
+/* Tablet: shrink columns but keep 3-col layout */
+@media (max-width: 1100px) {
+  .ts-main { grid-template-columns: 260px 1fr 300px; }
+}
+
+/* Mobile: single column, natural page scroll */
+@media (max-width: 768px) {
+  html, body { overflow: auto; height: auto; }
+  #root       { height: auto; min-height: 100vh; }
+
+  .ts-shell {
+    height: auto; min-height: 100vh;
+    grid-template-rows: 48px auto;
+  }
+
+  /* Topbar: hide empty center, tighten spacing */
+  .ts-topbar {
+    grid-template-columns: auto 1fr auto;
+    padding: 0 12px; gap: 8px;
+  }
+  .ts-topbar-center { display: none; }
+  .ts-logo-text     { font-size: 13px; }
+  .ts-topbar-right  { gap: 8px; }
+
+  /* Main: single column, natural height */
+  .ts-main {
+    grid-template-columns: 1fr;
+    height: auto; overflow: visible;
+  }
+
+  /* Feed: fixed height with internal scroll */
+  .ts-feed {
+    height: 45vh; min-height: 240px;
+    border-right: none;
+    border-bottom: 1px solid var(--ts-border);
+  }
+
+  /* Detail: natural height, no clipping */
+  .ts-detail        { border-right: none; overflow: visible; height: auto; }
+  .ts-detail-scroll { overflow: visible; height: auto; flex: none; }
+  .ts-chart-outer   { height: 260px; }
+
+  /* Wrap tab bar on small screens */
+  .ts-chart-bar  { flex-wrap: wrap; gap: 6px; padding: 6px 12px; }
+  .ts-view-tabs  { flex-wrap: wrap; gap: 3px; }
+  .ts-view-tab   { font-size: 9px; padding: 3px 8px; }
+
+  /* Price header: tighten */
+  .ts-price-header { padding: 12px 14px; gap: 12px; }
+  .ts-price-value  { font-size: 24px; }
+  .ts-price-symbol { font-size: 18px; }
+  .ts-price-stats  { gap: 10px; }
+
+  /* Right panel: natural height */
+  .ts-right        { border-left: none; border-top: 1px solid var(--ts-border); height: auto; overflow: visible; }
+  .ts-right-scroll { overflow: visible; height: auto; flex: none; }
+
+  /* Disable hover translate effects (bad on touch) */
+  .ts-tweet:hover      { transform: none; }
+  .ts-news-card:hover  { transform: none; }
+  .ts-chip:hover       { transform: none; }
+}
+
+/* Small phones */
+@media (max-width: 480px) {
+  .ts-price-value  { font-size: 20px; }
+  .ts-price-symbol { font-size: 16px; }
+  .ts-price-name   { display: none; }
+  .ts-earnings-box { display: none; }
+  .ts-stat-label   { font-size: 8px; }
+  .ts-stat-value   { font-size: 11px; }
+  .ts-chart-outer  { height: 220px; }
+  .ts-feed         { height: 40vh; }
+}
