@@ -127,16 +127,23 @@ def fetch_candles(symbol: str, timespan: str) -> list[dict]:
 
 # ── News ───────────────────────────────────────────────────────────────
 
-# Sources that are press-release wires — filtered out to keep editorial news only
-_NOISE_SOURCES = {
-    "benzinga", "business wire", "businesswire",
-    "pr newswire", "prnewswire", "globe newswire", "globenewswire",
-    "marketwired", "accesswire", "globenewswire",
+# Only show articles from authoritative editorial sources.
+# Checked against lowercased source string — partial match so variations like
+# "Reuters.com" or "Bloomberg News" still pass.
+_AUTHORITATIVE_SOURCES = {
+    "reuters", "bloomberg", "wsj", "wall street journal",
+    "barron", "financial times", "ft.com",
+    "cnbc", "marketwatch", "yahoo finance", "yahoo",
+    "the motley fool", "motley fool",
+    "seeking alpha", "investopedia",
+    "forbes", "fortune", "thestreet",
+    "associated press", " ap ", "dow jones",
 }
 
 
-def _is_noise(source: str) -> bool:
-    return source.lower().strip() in _NOISE_SOURCES
+def _is_authoritative(source: str) -> bool:
+    s = source.lower().strip()
+    return any(auth in s for auth in _AUTHORITATIVE_SOURCES)
 
 
 def fetch_news(symbol: str, days_back: int = 7, limit: int = 10) -> list[dict]:
@@ -144,7 +151,7 @@ def fetch_news(symbol: str, days_back: int = 7, limit: int = 10) -> list[dict]:
     to_dt   = datetime.now(timezone.utc)
     from_dt = to_dt - timedelta(days=days_back)
 
-    # Fetch more than needed so filtering doesn't leave us empty
+    # Fetch a wide window so the allowlist filter still fills the limit
     articles = fh_get("/company-news", {
         "symbol": sym,
         "from":   from_dt.strftime("%Y-%m-%d"),
@@ -154,19 +161,19 @@ def fetch_news(symbol: str, days_back: int = 7, limit: int = 10) -> list[dict]:
     if not isinstance(articles, list):
         return []
 
-    result = []
+    authoritative = []
     for a in articles:
-        if len(result) >= limit:
+        if len(authoritative) >= limit:
             break
         source = a.get("source", "")
-        if _is_noise(source):
+        if not _is_authoritative(source):
             continue
         ts = a.get("datetime")
         published = (
             datetime.fromtimestamp(ts, tz=timezone.utc).isoformat()
             if ts else None
         )
-        result.append({
+        authoritative.append({
             "title":     a.get("headline", ""),
             "publisher": source,
             "published": published,
@@ -174,7 +181,11 @@ def fetch_news(symbol: str, days_back: int = 7, limit: int = 10) -> list[dict]:
             "summary":   a.get("summary", ""),
         })
 
-    return result
+    # If no authoritative sources found in this window, widen search to 30 days
+    if not authoritative and days_back < 30:
+        return fetch_news(symbol, days_back=30, limit=limit)
+
+    return authoritative
 
 
 # ── Basic Financials (metrics) ─────────────────────────────────────────
