@@ -127,11 +127,24 @@ def fetch_candles(symbol: str, timespan: str) -> list[dict]:
 
 # ── News ───────────────────────────────────────────────────────────────
 
+# Sources that are press-release wires — filtered out to keep editorial news only
+_NOISE_SOURCES = {
+    "benzinga", "business wire", "businesswire",
+    "pr newswire", "prnewswire", "globe newswire", "globenewswire",
+    "marketwired", "accesswire", "globenewswire",
+}
+
+
+def _is_noise(source: str) -> bool:
+    return source.lower().strip() in _NOISE_SOURCES
+
+
 def fetch_news(symbol: str, days_back: int = 7, limit: int = 10) -> list[dict]:
     sym = symbol.upper()
     to_dt   = datetime.now(timezone.utc)
     from_dt = to_dt - timedelta(days=days_back)
 
+    # Fetch more than needed so filtering doesn't leave us empty
     articles = fh_get("/company-news", {
         "symbol": sym,
         "from":   from_dt.strftime("%Y-%m-%d"),
@@ -142,7 +155,12 @@ def fetch_news(symbol: str, days_back: int = 7, limit: int = 10) -> list[dict]:
         return []
 
     result = []
-    for a in articles[:limit]:
+    for a in articles:
+        if len(result) >= limit:
+            break
+        source = a.get("source", "")
+        if _is_noise(source):
+            continue
         ts = a.get("datetime")
         published = (
             datetime.fromtimestamp(ts, tz=timezone.utc).isoformat()
@@ -150,7 +168,7 @@ def fetch_news(symbol: str, days_back: int = 7, limit: int = 10) -> list[dict]:
         )
         result.append({
             "title":     a.get("headline", ""),
-            "publisher": a.get("source", ""),
+            "publisher": source,
             "published": published,
             "link":      a.get("url", ""),
             "summary":   a.get("summary", ""),
