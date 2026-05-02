@@ -3,6 +3,20 @@
 const { useState, useEffect, useRef, useCallback } = React;
 const API = "";
 
+const SECTORS = [
+  { name: "Technology",       ticker: "XLK" },
+  { name: "Financials",       ticker: "XLF" },
+  { name: "Health Care",      ticker: "XLV" },
+  { name: "Consumer Disc.",   ticker: "XLY" },
+  { name: "Comm. Services",   ticker: "XLC" },
+  { name: "Industrials",      ticker: "XLI" },
+  { name: "Consumer Staples", ticker: "XLP" },
+  { name: "Energy",           ticker: "XLE" },
+  { name: "Utilities",        ticker: "XLU" },
+  { name: "Real Estate",      ticker: "XLRE" },
+  { name: "Materials",        ticker: "XLB" },
+];
+
 // ─── Utilities ────────────────────────────────────────────────────
 
 function cleanHandle(h) {
@@ -240,7 +254,7 @@ function TweetCard({ tweet, isActive, onSelect }) {
 
 // ─── Detail Panel (center) ────────────────────────────────────────
 
-function DetailPanel({ symbol, quote, timespan, onTimespanChange, detailView, onDetailViewChange, fundamentals, fundLoading }) {
+function DetailPanel({ symbol, quote, timespan, onTimespanChange, detailView, onDetailViewChange, fundamentals, fundLoading, news }) {
   if (!symbol) {
     return (
       <div className="ts-detail">
@@ -281,10 +295,13 @@ function DetailPanel({ symbol, quote, timespan, onTimespanChange, detailView, on
             onClick={() => onDetailViewChange("analyst")}>ANALYST</button>
         </div>
       </div>
-      {detailView === "chart"        && <LWCChart symbol={symbol} timespan={timespan} />}
-      {detailView === "fundamentals" && <FundamentalsPanel data={fundamentals} loading={fundLoading} />}
-      {detailView === "earnings"     && <EarningsPanel symbol={symbol} />}
-      {detailView === "analyst"      && <AnalystPanel symbol={symbol} currentPrice={quote?.price} />}
+      <div className="ts-detail-scroll">
+        {detailView === "chart"        && <LWCChart symbol={symbol} timespan={timespan} />}
+        {detailView === "fundamentals" && <FundamentalsPanel data={fundamentals} loading={fundLoading} />}
+        {detailView === "earnings"     && <EarningsPanel symbol={symbol} />}
+        {detailView === "analyst"      && <AnalystPanel symbol={symbol} currentPrice={quote?.price} />}
+        <NewsRail articles={news || []} />
+      </div>
     </div>
   );
 }
@@ -936,14 +953,77 @@ function EarningsPanel({ symbol }) {
   );
 }
 
+// ─── Sector Watchlist ─────────────────────────────────────────────
+
+function SectorWatchlist() {
+  const [quotes,  setQuotes]  = useState({});
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    const results = await Promise.all(
+      SECTORS.map(s => fetch(`${API}/api/quote/${s.ticker}`).then(r => r.json()).catch(() => null))
+    );
+    const map = {};
+    SECTORS.forEach((s, i) => { if (results[i] && !results[i].error) map[s.ticker] = results[i]; });
+    setQuotes(map);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    load();
+    const t = setInterval(load, 60_000);
+    return () => clearInterval(t);
+  }, [load]);
+
+  return (
+    <div className="ts-sector">
+      <div className="ts-sector-header">
+        <span>S&amp;P SECTORS</span>
+        <button className="ts-sector-refresh" onClick={load} title="Refresh">↻</button>
+      </div>
+      {loading ? (
+        <div className="ts-sector-loading">Loading…</div>
+      ) : (
+        <table className="ts-sector-table">
+          <thead>
+            <tr>
+              <th>Sector</th>
+              <th>ETF</th>
+              <th style={{ textAlign:"right" }}>Price</th>
+              <th style={{ textAlign:"right" }}>Chg%</th>
+            </tr>
+          </thead>
+          <tbody>
+            {SECTORS.map(s => {
+              const q   = quotes[s.ticker];
+              const up  = (q?.change_pct ?? 0) >= 0;
+              const clr = q ? (up ? "var(--ts-up)" : "var(--ts-down)") : "var(--ts-muted)";
+              return (
+                <tr key={s.ticker}>
+                  <td className="ts-sector-name">{s.name}</td>
+                  <td className="ts-sector-ticker">{s.ticker}</td>
+                  <td className="ts-sector-price">{q ? fmtPrice(q.price) : "—"}</td>
+                  <td className="ts-sector-chg" style={{ color: clr }}>
+                    {q?.change_pct != null ? `${up ? "+" : ""}${q.change_pct.toFixed(2)}%` : "—"}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
 // ─── Right Panel ──────────────────────────────────────────────────
 
-function RightPanel({ aiData, aiLoading, news, activeSymbol }) {
+function RightPanel({ aiData, aiLoading, activeSymbol }) {
   return (
     <div className="ts-right">
       <div className="ts-right-scroll">
         <AIPanel data={aiData} loading={aiLoading} symbol={activeSymbol} />
-        <NewsRail articles={news} />
+        <SectorWatchlist />
       </div>
     </div>
   );
@@ -1528,9 +1608,10 @@ function App() {
         <DetailPanel symbol={activeSymbol} quote={quote}
           timespan={timespan} onTimespanChange={setTimespan}
           detailView={detailView} onDetailViewChange={setDetailView}
-          fundamentals={fundamentals} fundLoading={fundLoading} />
+          fundamentals={fundamentals} fundLoading={fundLoading}
+          news={news} />
         <RightPanel aiData={aiData} aiLoading={aiLoading}
-          news={news} activeSymbol={activeSymbol} />
+          activeSymbol={activeSymbol} />
       </div>
     </div>
   );

@@ -254,9 +254,15 @@ body {
   box-shadow: 0 2px 8px rgba(99,102,241,0.32);
 }
 
+.ts-detail-scroll {
+  flex: 1; overflow-y: auto; min-height: 0;
+}
+.ts-detail-scroll::-webkit-scrollbar { width: 4px; }
+.ts-detail-scroll::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.20); border-radius: 2px; }
+
 .ts-chart-outer {
   display: flex; flex-direction: column;
-  padding: 8px 16px 0; flex: 1; min-height: 0;
+  padding: 8px 16px 0; flex: none;
   background: rgba(255,255,255,0.35);
 }
 .ts-chart-legend {
@@ -349,8 +355,47 @@ body {
   font-family: var(--ts-mono); font-weight: 700; font-size: 10px; flex-shrink: 0;
 }
 
+/* ── SECTOR WATCHLIST ──────────────────────────────────── */
+.ts-sector { padding: 14px; border-top: 1px solid var(--ts-border); }
+.ts-sector-header {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+  margin-bottom: 10px; color: var(--ts-accent); text-transform: uppercase;
+}
+.ts-sector-refresh {
+  background: none; border: none; cursor: pointer;
+  color: var(--ts-muted); font-size: 15px; line-height: 1;
+  padding: 1px 4px; border-radius: 4px; transition: color 0.12s;
+}
+.ts-sector-refresh:hover { color: var(--ts-accent); }
+.ts-sector-loading { color: var(--ts-muted); font-size: 12px; text-align: center; padding: 16px 0; }
+.ts-sector-table { width: 100%; border-collapse: collapse; }
+.ts-sector-table th {
+  font-family: var(--ts-mono); font-size: 9px; font-weight: 700;
+  letter-spacing: 0.08em; color: var(--ts-muted); text-transform: uppercase;
+  padding: 4px 6px 7px; border-bottom: 1px solid var(--ts-border); text-align: left;
+}
+.ts-sector-table tbody tr {
+  border-bottom: 1px solid rgba(99,102,241,0.06); transition: background 0.12s;
+}
+.ts-sector-table tbody tr:hover { background: rgba(99,102,241,0.05); }
+.ts-sector-table td { padding: 6px 6px; vertical-align: middle; }
+.ts-sector-name { color: var(--ts-fg); font-size: 11px; }
+.ts-sector-ticker {
+  font-family: var(--ts-mono); font-weight: 700;
+  color: var(--ts-accent); font-size: 11px;
+}
+.ts-sector-price {
+  font-family: var(--ts-mono); font-size: 11px;
+  color: var(--ts-fg); text-align: right;
+}
+.ts-sector-chg {
+  font-family: var(--ts-mono); font-size: 11px;
+  font-weight: 600; text-align: right;
+}
+
 /* ── NEWS ──────────────────────────────────────────────── */
-.ts-news { padding: 14px; }
+.ts-news { padding: 14px; border-top: 1px solid var(--ts-border); }
 .ts-news-header {
   display: flex; justify-content: space-between; align-items: center;
   font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
