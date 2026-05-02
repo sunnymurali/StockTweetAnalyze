@@ -149,7 +149,7 @@ function TopBar({ count }) {
 
 // ─── Tweet Feed ───────────────────────────────────────────────────
 
-function TweetFeed({ tweets, activeId, onSelect, loading, search, onSearch, authors, authorFilter, onAuthorFilter, pendingCount, onLoadPending, lastRefreshed }) {
+function TweetFeed({ tweets, activeId, onSelect, loading, search, onSearch, pendingCount, onLoadPending, lastRefreshed }) {
   return (
     <div className="ts-feed">
       <div className="ts-feed-header">
@@ -162,42 +162,8 @@ function TweetFeed({ tweets, activeId, onSelect, loading, search, onSearch, auth
             </span>
           )}
         </div>
-        <input className="ts-feed-search" placeholder="Search ticker or keyword…"
+        <input className="ts-feed-search" placeholder="Ticker (e.g. NVDA) or keyword…"
           value={search} onChange={e => onSearch(e.target.value)} />
-        {authors.length > 1 && (
-          <div style={{ display:"flex", gap:4, flexWrap:"wrap", marginTop:2 }}>
-            <button
-              style={{
-                padding:"2px 7px", borderRadius:3, border:"1px solid",
-                fontFamily:"var(--ts-mono)", fontSize:9, fontWeight:700,
-                letterSpacing:"0.06em", cursor:"pointer", transition:"all 0.12s",
-                background: authorFilter == null ? "var(--ts-accent)" : "transparent",
-                color:       authorFilter == null ? "var(--ts-bg)"     : "var(--ts-muted)",
-                borderColor: authorFilter == null ? "var(--ts-accent)" : "var(--ts-border)",
-              }}
-              onClick={() => onAuthorFilter(null)}>
-              ALL
-            </button>
-            {authors.map(a => {
-              const active = authorFilter === a;
-              const color = avatarColor(a);
-              return (
-                <button key={a}
-                  style={{
-                    padding:"2px 7px", borderRadius:3, border:"1px solid",
-                    fontFamily:"var(--ts-mono)", fontSize:9, fontWeight:700,
-                    letterSpacing:"0.04em", cursor:"pointer", transition:"all 0.12s",
-                    background: active ? color + "33" : "transparent",
-                    color:       active ? color        : "var(--ts-muted)",
-                    borderColor: active ? color        : "var(--ts-border)",
-                  }}
-                  onClick={() => onAuthorFilter(active ? null : a)}>
-                  @{a}
-                </button>
-              );
-            })}
-          </div>
-        )}
       </div>
       {pendingCount > 0 && (
         <button className="ts-new-banner" onClick={onLoadPending}>
@@ -1521,7 +1487,6 @@ function App() {
   const [timespan,     setTimespan]     = useState("day");
   const [detailView,   setDetailView]   = useState("chart");
   const [search,         setSearch]         = useState("");
-  const [authorFilter,   setAuthorFilter]   = useState(null);
   const [pendingTweets,  setPendingTweets]  = useState([]);
   const [lastRefreshed,  setLastRefreshed]  = useState(null);
 
@@ -1606,15 +1571,12 @@ function App() {
     }
   }, []);
 
-  // Unique authors for filter chips
-  const authors = [...new Set(tweets.map(t => cleanHandle(t.author || "")).filter(Boolean))].sort();
-
   const filtered = tweets.filter(t => {
-    if (authorFilter && cleanHandle(t.author || "") !== authorFilter) return false;
     if (!search.trim()) return true;
+    const q = search.toLowerCase();
     return (
-      t.text.toLowerCase().includes(search.toLowerCase()) ||
-      t.tickers?.some(tk => tk.toLowerCase().includes(search.toLowerCase()))
+      t.text.toLowerCase().includes(q) ||
+      t.tickers?.some(tk => tk.toLowerCase().includes(q))
     );
   });
 
@@ -1624,7 +1586,6 @@ function App() {
       <div className="ts-main">
         <TweetFeed tweets={filtered} activeId={activeTweet?.id} onSelect={selectTweet}
           loading={feedLoading} search={search} onSearch={setSearch}
-          authors={authors} authorFilter={authorFilter} onAuthorFilter={setAuthorFilter}
           pendingCount={pendingTweets.length} onLoadPending={loadPending}
           lastRefreshed={lastRefreshed} />
         <DetailPanel symbol={activeSymbol} quote={quote}
