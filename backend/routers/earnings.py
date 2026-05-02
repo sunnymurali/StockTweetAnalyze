@@ -31,7 +31,7 @@ _filing_cache: dict[str, dict] = {}   # sym → {data, filings_full, ts}
 _summ_cache:   dict[str, str]  = {}   # accession → summary text
 _CACHE_TTL = 86400
 
-_UA = "StockTweetLive/1.0 (research tool; contact@stocktweetlive.com)"
+_UA = "JanStreet/1.0 (research tool)"
 
 # RAG query strings — cover the five key analyst topics
 _RAG_QUERIES = [
