@@ -262,7 +262,7 @@ function DetailPanel({ symbol, quote, timespan, onTimespanChange, detailView, on
         </div>
       </div>
       <div className="ts-detail-scroll">
-        {detailView === "chart"        && <LWCChart symbol={symbol} timespan={timespan} />}
+        {detailView === "chart"        && <TVChart symbol={symbol} timespan={timespan} />}
         {detailView === "fundamentals" && <FundamentalsPanel data={fundamentals} loading={fundLoading} />}
         {detailView === "earnings"     && <EarningsPanel symbol={symbol} />}
         {detailView === "analyst"      && <AnalystPanel symbol={symbol} currentPrice={quote?.price} />}
@@ -340,117 +340,54 @@ function PriceHeader({ quote, earningsInfo }) {
   );
 }
 
-// ─── LWC Chart ────────────────────────────────────────────────────
+// ─── TradingView Chart ────────────────────────────────────────────
 
-function LWCChart({ symbol, timespan }) {
-  const containerRef = useRef(null);
-  const legendRef    = useRef(null);
-  const chartRef     = useRef(null);
-  const roRef        = useRef(null);
-  const [status, setStatus] = useState("loading");
+const TV_INTERVAL = { day: "5", week: "60", "3y": "W" };
+
+function TVChart({ symbol, timespan }) {
+  const idRef = useRef("tv_" + Math.random().toString(36).slice(2, 9));
 
   useEffect(() => {
-    if (!symbol || !containerRef.current) return;
-    let cancelled = false;
-    setStatus("loading");
-    if (legendRef.current) legendRef.current.innerHTML = "";
+    if (!symbol || !window.TradingView) return;
+    const el = document.getElementById(idRef.current);
+    if (!el) return;
+    el.innerHTML = "";
 
-    const load = async () => {
-      try {
-        const res  = await fetch(`${API}/api/chart/${symbol}?timespan=${timespan}`);
-        const data = await res.json();
-        if (cancelled || !containerRef.current) return;
-        if (!data.bars?.length) { setStatus("empty"); return; }
+    new window.TradingView.widget({
+      autosize:          true,
+      symbol:            symbol,
+      interval:          TV_INTERVAL[timespan] || "D",
+      timezone:          "America/New_York",
+      theme:             "dark",
+      style:             "1",
+      locale:            "en",
+      toolbar_bg:        "#0d0d0d",
+      enable_publishing: false,
+      hide_top_toolbar:  false,
+      save_image:        false,
+      container_id:      idRef.current,
+      studies:           ["RSI@tv-basicstudies", "MACD@tv-basicstudies"],
+      overrides: {
+        "paneProperties.background":                          "#07080f",
+        "paneProperties.backgroundType":                      "solid",
+        "paneProperties.vertGridProperties.color":            "#0f1525",
+        "paneProperties.horzGridProperties.color":            "#0f1525",
+        "scalesProperties.textColor":                         "#c0c8e0",
+        "mainSeriesProperties.candleStyle.upColor":           "#00ff88",
+        "mainSeriesProperties.candleStyle.downColor":         "#ff2d55",
+        "mainSeriesProperties.candleStyle.borderUpColor":     "#00ff88",
+        "mainSeriesProperties.candleStyle.borderDownColor":   "#ff2d55",
+        "mainSeriesProperties.candleStyle.wickUpColor":       "#00ff88",
+        "mainSeriesProperties.candleStyle.wickDownColor":     "#ff2d55",
+      },
+    });
 
-        if (roRef.current)    { roRef.current.disconnect();  roRef.current = null; }
-        if (chartRef.current) { chartRef.current.remove();   chartRef.current = null; }
-
-        const el    = containerRef.current;
-        const chart = LightweightCharts.createChart(el, {
-          width:  el.clientWidth  || 600,
-          height: el.clientHeight || 320,
-          layout: { background: { color: "#fafbff" }, textColor: "#1e1b4b" },
-          grid:   { vertLines: { color: "rgba(99,102,241,0.07)" }, horzLines: { color: "rgba(99,102,241,0.07)" } },
-          crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-          rightPriceScale: { borderColor:"rgba(99,102,241,0.15)", scaleMargins:{ top:0.05, bottom:0.22 } },
-          timeScale: { borderColor:"rgba(99,102,241,0.15)", timeVisible:true, secondsVisible:false, fixLeftEdge:true, fixRightEdge:true },
-        });
-        chartRef.current = chart;
-
-        const candles = chart.addCandlestickSeries({
-          upColor:"#16a34a", downColor:"#dc2626",
-          borderUpColor:"#16a34a", borderDownColor:"#dc2626",
-          wickUpColor:"#16a34a",   wickDownColor:"#dc2626",
-        });
-        const volSeries = chart.addHistogramSeries({
-          priceFormat:{ type:"volume" }, priceScaleId:"vol",
-          lastValueVisible:false, priceLineVisible:false,
-        });
-        chart.priceScale("vol").applyOptions({ scaleMargins:{ top:0.8,bottom:0 }, borderVisible:false, visible:false });
-
-        const barByTime = {};
-        data.bars.forEach(b => { barByTime[b.time] = b; });
-
-        candles.setData(data.bars);
-        volSeries.setData(data.bars.map(b => ({ time:b.time, value:b.volume||0,
-          color: b.close >= b.open ? "#16a34a55" : "#dc262655" })));
-        chart.timeScale().fitContent();
-        setStatus("ok");
-
-        chart.subscribeCrosshairMove(param => {
-          if (!legendRef.current) return;
-          if (!param.time || !param.seriesData?.size) { legendRef.current.innerHTML = ""; return; }
-          const bar = param.seriesData.get(candles);
-          if (!bar) return;
-          const vol = barByTime[param.time]?.volume;
-          const dir = bar.close >= bar.open ? "#16a34a" : "#dc2626";
-          legendRef.current.innerHTML =
-            `<span>O <strong style="color:${dir}">${bar.open.toFixed(2)}</strong></span>` +
-            `<span>H <strong style="color:${dir}">${bar.high.toFixed(2)}</strong></span>` +
-            `<span>L <strong style="color:${dir}">${bar.low.toFixed(2)}</strong></span>` +
-            `<span>C <strong style="color:${dir}">${bar.close.toFixed(2)}</strong></span>` +
-            (vol ? `<span>V <strong>${fmtNum(vol)}</strong></span>` : "");
-        });
-
-        const ro = new ResizeObserver(() => {
-          if (chartRef.current && el) chartRef.current.applyOptions({ width: el.clientWidth });
-        });
-        ro.observe(el);
-        roRef.current = ro;
-      } catch (e) {
-        if (!cancelled) setStatus("error");
-        console.error("Chart error:", e);
-      }
-    };
-    load();
-    return () => {
-      cancelled = true;
-      if (roRef.current)    { roRef.current.disconnect();  roRef.current = null; }
-      if (chartRef.current) { chartRef.current.remove();   chartRef.current = null; }
-      if (legendRef.current) legendRef.current.innerHTML = "";
-    };
+    return () => { if (el) el.innerHTML = ""; };
   }, [symbol, timespan]);
 
   return (
-    <div className="ts-chart-outer">
-      <div ref={legendRef} className="ts-chart-legend" />
-      <div style={{ position:"relative", flex:1, minHeight:0 }}>
-        {status === "loading" && (
-          <div style={{ position:"absolute",inset:0,display:"grid",placeItems:"center",
-            color:"var(--ts-muted)",fontSize:12,fontFamily:"var(--ts-mono)",pointerEvents:"none" }}>
-            Loading chart…
-          </div>
-        )}
-        {status === "empty" && (
-          <div style={{ position:"absolute",inset:0,display:"grid",placeItems:"center",
-            color:"var(--ts-muted)",fontSize:12 }}>No chart data available</div>
-        )}
-        {status === "error" && (
-          <div style={{ position:"absolute",inset:0,display:"grid",placeItems:"center",
-            color:"var(--ts-down)",fontSize:12 }}>Chart failed to load</div>
-        )}
-        <div ref={containerRef} className="ts-chart-canvas" style={{ height:320 }} />
-      </div>
+    <div style={{ padding: 0, height: 500 }}>
+      <div id={idRef.current} style={{ width: "100%", height: "100%" }} />
     </div>
   );
 }
