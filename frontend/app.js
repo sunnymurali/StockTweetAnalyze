@@ -1002,11 +1002,11 @@ function SectorWatchlist() {
 
 // ─── Right Panel ──────────────────────────────────────────────────
 
-function RightPanel({ aiData, aiLoading, activeSymbol }) {
+function RightPanel({ aiData, aiLoading, activeSymbol, aiEnabled }) {
   return (
     <div className="ts-right">
       <div className="ts-right-scroll">
-        <AIPanel data={aiData} loading={aiLoading} symbol={activeSymbol} />
+        {aiEnabled && <AIPanel data={aiData} loading={aiLoading} symbol={activeSymbol} />}
         <SectorWatchlist />
       </div>
     </div>
@@ -1482,6 +1482,7 @@ function App() {
   const [earningsInfo, setEarningsInfo] = useState(null);
   const [aiData,       setAiData]       = useState(null);
   const [aiLoading,    setAiLoading]    = useState(false);
+  const [aiEnabled,    setAiEnabled]    = useState(false);
   const [fundamentals, setFundamentals] = useState(null);
   const [fundLoading,  setFundLoading]  = useState(false);
   const [timespan,     setTimespan]     = useState("day");
@@ -1512,6 +1513,12 @@ function App() {
   }, []);
 
   useEffect(() => { fetchFeed(true); }, [fetchFeed]);
+
+  useEffect(() => {
+    fetch(`${API}/api/config`).then(r => r.json())
+      .then(c => setAiEnabled(c.ai_enabled === true))
+      .catch(() => setAiEnabled(false));
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => fetchFeed(false), 30 * 60 * 1000);
@@ -1550,23 +1557,27 @@ function App() {
     setEarningsInfo(eRes);
     setFundLoading(false);
 
-    // AI call uses quote + news results
-    try {
-      const headlines = (nRes?.news || []).map(n => n.title).filter(Boolean);
-      const aiRes = await fetch(`${API}/api/action-item`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tweet: tweet.text, symbol: sym,
-          price:      qRes?.price      ?? 0,
-          change_pct: qRes?.change_pct ?? 0,
-          headlines,
-        }),
-      });
-      setAiData(await aiRes.json());
-    } catch (e) {
-      console.error("AI fetch failed:", e);
-    } finally {
+    // AI call — only if enabled
+    if (aiEnabled) {
+      try {
+        const headlines = (nRes?.news || []).map(n => n.title).filter(Boolean);
+        const aiRes = await fetch(`${API}/api/action-item`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            tweet: tweet.text, symbol: sym,
+            price:      qRes?.price      ?? 0,
+            change_pct: qRes?.change_pct ?? 0,
+            headlines,
+          }),
+        });
+        setAiData(await aiRes.json());
+      } catch (e) {
+        console.error("AI fetch failed:", e);
+      } finally {
+        setAiLoading(false);
+      }
+    } else {
       setAiLoading(false);
     }
   }, []);
@@ -1594,7 +1605,7 @@ function App() {
           fundamentals={fundamentals} fundLoading={fundLoading}
           news={news} earningsInfo={earningsInfo} />
         <RightPanel aiData={aiData} aiLoading={aiLoading}
-          activeSymbol={activeSymbol} />
+          activeSymbol={activeSymbol} aiEnabled={aiEnabled} />
       </div>
     </div>
   );
