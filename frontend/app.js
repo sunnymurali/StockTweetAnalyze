@@ -129,8 +129,8 @@ function TopBar({ count }) {
   return (
     <div className="ts-topbar">
       <div className="ts-logo">
-        <span className="ts-logo-mark">JS</span>
-        <span className="ts-logo-text">Jan<span>Street</span></span>
+        <span className="ts-logo-mark">JT</span>
+        <span className="ts-logo-text">Jan<span>Tweet</span></span>
       </div>
       <div className="ts-topbar-center" />
       <div className="ts-topbar-right">

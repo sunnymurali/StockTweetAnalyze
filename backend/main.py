@@ -1,5 +1,5 @@
 """
-Jan Street — FastAPI backend
+Jan Tweet — FastAPI backend
 """
 
 import asyncio
@@ -82,7 +82,7 @@ async def lifespan(app: FastAPI):
         await client.stop()
 
 
-app = FastAPI(title="Jan Street", lifespan=lifespan)
+app = FastAPI(title="Jan Tweet", lifespan=lifespan)
 
 app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(
